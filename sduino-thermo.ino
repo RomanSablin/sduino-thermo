@@ -56,7 +56,7 @@ void loop() {
     mCount++;
     C7Segment3Show(); 
   }
-  if(mCount >= 30)
+  if(mCount >= 10)
   {
     mCount = 0;
     ReadThemperature();
@@ -144,15 +144,23 @@ void Char2Bcd(const uint16_t _val, uint8_t * _buf)
 
 uint16_t ReadThemperature()
 {
-  uint32_t av = analogRead(SENSOR_PIN);
-  float tmp = 1023.0f/(float)av;
-  float res = 10000.0/(tmp - 1.0); // 10k/(1023/ADC-1)
-  uint8_t dt = 0;
+  static uint8_t adc_count = 0;
+  static uint32_t av = 0;
+  av += analogRead(SENSOR_PIN);
 
-  tmp = logf(10000.0f/res);
-  tmp /= 3950; // coeff
-  tmp += 1.0 / (25 + 273.15);
-  tmp = 1.0 / tmp;
-  tmp -= 273.15f;  // convert to celsius
-  C7SegmentSet((uint16_t)tmp, dt); // show to LCD
+  if(++adc_count >= 3)
+  {
+    adc_count = 0;
+    av /= 4;
+    float tmp = 1023.0f/(float)av - 1;
+    float res = 9000.0f/tmp;
+    uint8_t dt = 2;
+  
+    tmp = logf(10000.0f/res);
+    tmp /= 4000; // coeff
+    tmp += 1.0 / (25 + 273.15);
+    tmp = 1.0 / tmp;
+    tmp -= 273.15f;  // convert to celsius
+    C7SegmentSet((uint16_t)(tmp * 10.0), dt); // show to LCD
+  }
 }
